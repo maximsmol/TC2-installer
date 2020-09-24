@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import \
   QLineEdit, \
   QMessageBox, \
   QLabel, \
-  QTextEdit, \
+  QTextBrowser, \
   QProgressBar
 
 with (Path(__file__).parent / 'test_release.json').open('r') as f:
@@ -60,11 +60,12 @@ version_layout.addStretch(2)
 
 # changelog_palette = QPalette()
 # changelog_palette.setColor(QPalette.Base, QColorConstants.White)
-changelog = QTextEdit()
+changelog = QTextBrowser()
+changelog.setOpenExternalLinks(True)
 # changelog.setPalette(changelog_palette)
 # with (Path(__file__).parent / 'gh_markdown.css').open('r') as f:
 #   changelog.document().setDefaultStyleSheet(f.read())
-changelog.setReadOnly(True)
+# changelog.setReadOnly(True)
 version_select_layout.addWidget(changelog)
 
 from md_cache import get_md
