@@ -100,7 +100,15 @@ tf2_default_path = '~/'
 if sys.platform == 'linux':
   tf2_default_path = '~/.steam/steam/steamapps/common/Team Fortress 2/'
 elif sys.platform == 'win32':
-  tf2_default_path = Path(__file__).drive / 'Program Files' / 'Steam' / 'steamapps' / 'common' / 'Team Fortress 2'
+  import winreg
+  try:
+    hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\WOW6432Node\\Valve\\Steam')
+    steam_path = winreg.QueryValueEx(hkey, "InstallPath")[0]
+    tf2_default_path = Path(steam_path) / 'steamapps' / 'common' / 'Team Fortress 2'
+  except:
+    print('Could not read the Steam install location from registry.')
+    print('Using a dumb default.')
+    tf2_default_path = Path(__file__).drive / 'Program Files' / 'Steam' / 'steamapps' / 'common' / 'Team Fortress 2'
 elif sys.platform == 'darwin':
   tf2_default_path = '~/Library/Application Support/Steam/steamapps/common/Team Fortress 2'
 else:
