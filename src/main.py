@@ -29,12 +29,25 @@ from PyQt5.QtWidgets import \
   QTextBrowser, \
   QProgressBar
 
-with (Path(__file__).parent / 'test_release.json').open('r') as f:
-  releases = [json.load(f)]
-# TODO: fetch in a thread
+from md_cache import getMdFetcher
+
+debug = False
+
+releases = []
+release_cache = Path(__file__).parent / 'releases_cache.json'
+if debug:
+  if release_cache.exists():
+    with release_cache.open('r') as f:
+      releases = [json.load(f)]
+
+# TODO: fetch releases in a thread
 releases = requests.get('https://api.github.com/repos/mastercomfig/team-comtress-2/releases').json()
 # TODO: master should work, maybe also specific commits, other branches, and all tags
 # releases += [{'__special': 'master', 'name': 'master'}]
+
+if debug:
+  with release_cache.open('w') as f:
+    json.dump(releases, f)
 
 app = QApplication(sys.argv)
 app.setWindowIcon(QIcon(str(Path(__file__).parent.parent / 'icon.png')))
@@ -53,8 +66,6 @@ version_layout = QHBoxLayout()
 version_select_layout.addLayout(version_layout)
 version_label = QLabel('Team Comtress 2 Version:')
 version_list = QComboBox()
-for r in releases:
-  version_list.addItem(r['name'])
 version_layout.addWidget(version_label)
 version_layout.addWidget(version_list)
 
@@ -71,6 +82,7 @@ changelog.setOpenExternalLinks(True)
 #   changelog.document().setDefaultStyleSheet(f.read())
 # changelog.setReadOnly(True)
 version_select_layout.addWidget(changelog)
+changelogFetcher = getMdFetcher(changelog)
 
 from md_cache import get_md
 def select_version(i):
@@ -88,11 +100,16 @@ def select_version(i):
     return
 
   version_date_label.setText('Published on: ' + dp.isoparse(release['published_at']).strftime('%x'))
-  # TODO: fetch markdown in a thread
-  changelog.setHtml(get_md(release))
-select_version(0)
+  changelogFetcher.submit(release)
 version_list.currentIndexChanged.connect(select_version)
 
+# this is for async updating of the release list in the future
+def upd_releases():
+  version_list.clear()
+  for r in releases:
+    version_list.addItem(r['name'])
+  select_version(0)
+upd_releases()
 
 tf2_path_label = QLabel('TF2 Path:')
 main_layout.addWidget(tf2_path_label, 1, 0)
@@ -178,13 +195,6 @@ class TC2InstallWorker(QObject):
     self.running_lock = Lock()
     self._running = False
 
-    self.stopped = Event()
-    self.stopped.set()
-
-  @QtCore.pyqtSlot()
-  def stop(self):
-    self.running = False
-
   @property
   def running(self):
     with self.running_lock:
@@ -201,106 +211,102 @@ class TC2InstallWorker(QObject):
 
   @QtCore.pyqtSlot()
   def work(self):
-    try:
-      self.stopped.clear()
-      self.running = True
+    self.running = True
 
-      src = full_tf2_path()
-      src_p = Path(src)
-      dst = os.path.expanduser(install_path.text())
-      dst_p = Path(dst)
+    src = full_tf2_path()
+    src_p = Path(src)
+    dst = os.path.expanduser(install_path.text())
+    dst_p = Path(dst)
 
-      dst_p.mkdir(parents=True, exist_ok=True)
+    dst_p.mkdir(parents=True, exist_ok=True)
 
-      release = releases[version_list.currentIndex()]
-      if '__special' in release and release['__special'] == 'master':
-        raise ValueError('Not implemented')
+    release = releases[version_list.currentIndex()]
+    if '__special' in release and release['__special'] == 'master':
+      raise ValueError('Not implemented')
 
-      self.print_status(0.0, f'Downloading `game_clean.zip` for release {release["name"]}…')
-      asset = None
-      for a in release['assets']:
-        if a['name'] != 'game_clean.zip':
-          continue
-        asset = a
-        break
-      if asset is None:
-        QMessageBox(QMessageBox.Critical, 'Could Not Download Release',
-                    'The selected version seems to not include `game_clean.zip`\n\n'
-                    'Aborting installation.').exec_()
-      print(f'Asset URL is: {asset["browser_download_url"]}')
+    self.print_status(0.0, f'Downloading `game_clean.zip` for release {release["name"]}…')
+    asset = None
+    for a in release['assets']:
+      if a['name'] != 'game_clean.zip':
+        continue
+      asset = a
+      break
+    if asset is None:
+      QMessageBox(QMessageBox.Critical, 'Could Not Download Release',
+                  'The selected version seems to not include `game_clean.zip`\n\n'
+                  'Aborting installation.').exec_()
+    print(f'Asset URL is: {asset["browser_download_url"]}')
 
-      versioned_asset = dst_p / f'game_clean_{release["name"]}.zip'
-      if versioned_asset.exists():
-        print(f'Reusing existing download: `{versioned_asset}`.')
-      else:
-        print(f'Downloading `{versioned_asset}`.')
-        with versioned_asset.open('wb') as f:
-          f.write(requests.get(asset["browser_download_url"]).content)
+    versioned_asset = dst_p / f'game_clean_{release["name"]}.zip'
+    if versioned_asset.exists():
+      print(f'Reusing existing download: `{versioned_asset}`.')
+    else:
+      print(f'Downloading `{versioned_asset}`.')
+      with versioned_asset.open('wb') as f:
+        f.write(requests.get(asset["browser_download_url"]).content)
 
+    if not self.running:
+      return
+
+    self.print_status(0.1, f'Copying TF2 from {src_p.name} to {dst_p.name}…')
+    files_copied = 0
+    def sync_dir(fr, to, indent=0):
+      nonlocal files_copied
       if not self.running:
         return
 
-      self.print_status(0.1, f'Copying TF2 from {src_p.name} to {dst_p.name}…')
-      files_copied = 0
-      def sync_dir(fr, to, indent=0):
-        nonlocal files_copied
+      to.mkdir(exist_ok=True)
+      for x in fr.iterdir():
         if not self.running:
           return
 
-        to.mkdir(exist_ok=True)
-        for x in fr.iterdir():
-          if not self.running:
-            return
-
-          to_cur = to / x.name
-          # TODO: is there a way to skip entire directories?
-          if not x.is_dir() and to_cur.exists() and to_cur.lstat().st_mtime == x.lstat().st_mtime:
-            print(f'{"  " * indent}SKIP {x.name}')
-            continue
-
-          print(f'{"  " * indent}Syncing {x.name}')
-          if x.is_dir():
-            sync_dir(fr / x.name, to_cur, indent + 1)
-          else:
-            self.print_status(0.1 + min(files_copied, expected_tf2_files)/expected_tf2_files*.8, f'Copying TF2 from {src_p.name} to {dst_p.name}: {x.name}…')
-            shutil.copy2(x, to_cur)
-            files_copied += 1
-
-      # if dst_p.exists() and dst_p.lstat().st_mtime >= src_p.lstat().st_mtime:
-      #   print(f'Skip sync, directory is already up-to-date')
-      # else:
-      sync_dir(src_p, dst_p)
-
-      if not self.running:
-        return
-
-      self.print_status(0.9, f'Removing custom settings…')
-      for f in (dst_p / 'tf' / 'custom').iterdir():
-        if f.name == 'readme.txt':
-          continue
-        if f.name == 'workshop':
-          for f1 in f.iterdir():
-            rm(f1)
+        to_cur = to / x.name
+        # TODO: is there a way to skip entire directories?
+        if not x.is_dir() and to_cur.exists() and to_cur.lstat().st_mtime == x.lstat().st_mtime:
+          print(f'{"  " * indent}SKIP {x.name}')
           continue
 
-        shutil.rmtree(f)
-      for f in (dst_p / 'tf' / 'cfg').iterdir():
-        if f.name == 'unencrypted':
-          for f1 in f.iterdir():
-            rm(f1)
-          continue
-        if f.name in safe_cfgs:
-          continue
-        rm(f)
+        print(f'{"  " * indent}Syncing {x.name}')
+        if x.is_dir():
+          sync_dir(fr / x.name, to_cur, indent + 1)
+        else:
+          self.print_status(0.1 + min(files_copied, expected_tf2_files)/expected_tf2_files*.8, f'Copying TF2 from {src_p.name} to {dst_p.name}: {x.name}…')
+          shutil.copy2(x, to_cur)
+          files_copied += 1
 
-      self.print_status(0.95, f'Extracting {versioned_asset}…')
-      time.sleep(1)
-      with zipfile.ZipFile(versioned_asset, 'r') as f:
-        f.extractall(dst_p)
+    # if dst_p.exists() and dst_p.lstat().st_mtime >= src_p.lstat().st_mtime:
+    #   print(f'Skip sync, directory is already up-to-date')
+    # else:
+    sync_dir(src_p, dst_p)
 
-      self.print_status(1.0, 'Done!')
-    finally:
-      self.stopped.set()
+    if not self.running:
+      return
+
+    self.print_status(0.9, f'Removing custom settings…')
+    for f in (dst_p / 'tf' / 'custom').iterdir():
+      if f.name == 'readme.txt':
+        continue
+      if f.name == 'workshop':
+        for f1 in f.iterdir():
+          rm(f1)
+        continue
+
+      shutil.rmtree(f)
+    for f in (dst_p / 'tf' / 'cfg').iterdir():
+      if f.name == 'unencrypted':
+        for f1 in f.iterdir():
+          rm(f1)
+        continue
+      if f.name in safe_cfgs:
+        continue
+      rm(f)
+
+    self.print_status(0.95, f'Extracting {versioned_asset}…')
+    time.sleep(1)
+    with zipfile.ZipFile(versioned_asset, 'r') as f:
+      f.extractall(dst_p)
+
+    self.print_status(1.0, 'Done!')
 
 
 added_progress_info = [False]
@@ -333,9 +339,8 @@ class TC2Installer(QObject):
     install_status.setText(message)
 
   def run(self):
-    if not self.worker.stopped.is_set():
-      self.worker.running = False
-    self.worker.stopped.wait()
+    self.worker.running = False
+    # this is queued by Qt
     self.run_worker_signal.emit()
 
 
