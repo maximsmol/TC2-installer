@@ -12,7 +12,7 @@ import time
 import requests
 from PyQt5 import QtCore
 from PyQt5.QtCore import QUrl, QObject, QThread, Qt
-from PyQt5.QtGui import QColorConstants, QPalette
+from PyQt5.QtGui import QColorConstants, QPalette, QIcon
 from PyQt5.QtWidgets import \
   QApplication, \
   QMainWindow, \
@@ -37,6 +37,10 @@ releases = requests.get('https://api.github.com/repos/mastercomfig/team-comtress
 # releases += [{'__special': 'master', 'name': 'master'}]
 
 app = QApplication(sys.argv)
+app.setWindowIcon(QIcon(str(Path(__file__).parent.parent / 'icon.png')))
+if sys.platform == 'win32':
+  import ctypes
+  ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u'maximsmol.tc2installer')
 
 win = QMainWindow()
 main = QWidget()
