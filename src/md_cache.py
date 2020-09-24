@@ -3,6 +3,8 @@ from pathlib import Path
 
 import requests
 
+from worker_utils import create_threaded
+
 md_cache = {}
 md_cache_path = Path(__file__).parent / 'md_cache.pkl'
 if md_cache_path.exists():
@@ -24,3 +26,9 @@ def get_md(release):
     pickle.dump(md_cache, f)
 
   return '<div class="markdown-body">' + res + '</div>'
+
+def getMdFetcher(widget):
+  return create_threaded(lambda release: get_md(release),
+                         lambda res: widget.setHtml(res),
+                         [dict],
+                         [str])()
