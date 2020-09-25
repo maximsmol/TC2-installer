@@ -402,9 +402,6 @@
           }
         }
       },
-      "temp": {
-        "733de8da.vtf": null
-      },
       "vgui": {
         "replay": {
           "thumbnails": {}
@@ -420,44 +417,6 @@
     },
     "download": {
       "readme.txt": null,
-      "user_custom": {
-        "22": {
-          "225c9fba.dat": null
-        },
-        "f2": {
-          "f2ac5a38.dat": null
-        },
-        "73": {
-          "733de8da.dat": null
-        },
-        "d9": {
-          "d90a0eff.dat": null
-        },
-        "c1": {
-          "c12cc55b.dat": null
-        },
-        "00": {
-          "0048e875.dat": null
-        },
-        "f4": {
-          "f40f4c07.dat": null
-        },
-        "e8": {
-          "e8d15b15.dat": null
-        },
-        "e7": {
-          "e75a6935.dat": null
-        },
-        "64": {
-          "645328f0.dat": null
-        },
-        "ae": {
-          "aef7cdb8.dat": null
-        }
-      },
-      "sound": {
-        "sound.cache": null
-      },
       "maps": {
         "koth_product_rcx.bsp": null,
         "pl_vigil_rc7.bsp": null,
@@ -596,7 +555,6 @@
     "tf2_sound_misc_000.vpk": null,
     "trainingprogress.txt": null,
     "tf2_textures_068.vpk": null,
-    "videoconfig_linux.cfg": null,
     "tf2_textures_061.vpk": null,
     "tf2_sound_vo_english_001.vpk": null,
     "tf2_textures_050.vpk": null,
@@ -610,7 +568,6 @@
     "tf2_textures_062.vpk": null,
     "voice_ban.dt": null,
     "tf2_textures_002.vpk": null,
-    "glshaders.cfg": null,
     "media": {
       "cp_dustbowl.bik": null,
       "cp_steel.bik": null,
@@ -982,7 +939,6 @@
   },
   "thirdpartylegalnotices.txt": null,
   "steam_appid.txt": null,
-  "hl2_linux": null,
   "platform": {
     "servers": {
       "serverbrowser_hungarian.txt": null,
@@ -1163,16 +1119,13 @@
   "bin": {
     "dxsupport_sp.cfg": null,
     "libopenvr_api.so": null,
-    "libSDL2-2.0.so.0": null,
     "shaderapiempty.so": null,
-    "libTelemetryX64.so": null,
     "libsteamnetworkingsockets.so": null,
     "soundemittersystem.so": null,
     "filesystem_stdio.so": null,
     "bsppack.so": null,
     "bugreporter_filequeue.so": null,
     "studiorender.so": null,
-    "video_webm.so": null,
     "replay.so": null,
     "shaderapidx9.so": null,
     "dxsupport.csv": null,
@@ -1181,42 +1134,27 @@
     "video_bink.so": null,
     "vtex_dll.so": null,
     "vguimatsurface.so": null,
-    "dxsupport_linux.csv": null,
     "vaudio_speex.so": null,
     "stdshader_dx9.so": null,
     "vidcfg.bin": null,
     "vgui2.so": null,
-    "libprofiler.so.0": null,
     "video_services.so": null,
     "libsteam_api.so": null,
-    "libtogl.so": null,
-    "libMiles.so": null,
     "inputsystem.so": null,
     "sourcevr.so": null,
-    "libTelemetryX86.so": null,
     "vphysics.so": null,
-    "cef_gtk.pak": null,
-    "linux32": {
-      "mssmixer.mix": null,
-      "binkawin.asi": null,
-      "mssmp3.asi": null
-    },
     "datacache.so": null,
     "dxsupport.cfg": null,
-    "dxsupport_linux.cfg": null,
     "GameUI.so": null,
-    "libtcmalloc_minimal.so.4": null,
     "dxsupport_episodic.cfg": null,
     "vaudio_celt.so": null,
     "launcher.so": null,
     "bugreporter_public.so": null,
     "materialsystem.so": null,
-    "vpk_linux32": null,
     "scenefilecache.so": null,
     "vaudio_miles.so": null,
     "ServerBrowser.so": null,
     "libtier0.so": null,
     "engine.so": null
-  },
-  "hl2.sh": null
+  }
 }

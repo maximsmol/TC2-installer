@@ -1,3 +1,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
+/dist
+/build
+/TC2 Installer.spec

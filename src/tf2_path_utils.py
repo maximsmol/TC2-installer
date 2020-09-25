@@ -3,12 +3,16 @@ import os
 import json
 from pathlib import Path
 
+from PyQt5.QtWidgets import QMessageBox
+
+from file_base import file_base
+
 tf2_path_lineedit = [None]
 
 def full_tf2_path():
   return os.path.expanduser(tf2_path_lineedit[0].text())
 
-with (Path(__file__).parent / 'tf2_paths.txt').open('r') as f:
+with (file_base / 'tf2_paths.txt').open('r') as f:
   all_tf2_paths = json.load(f)
 
 def count_files(schema):
@@ -25,6 +29,11 @@ def tf2_path_sanity_check(x, fast=False):
   if not fast:
     def check(schema, p):
       for k, v in schema.items():
+        if sys.platform == 'win32':
+          if k.endswith('.so'):
+            k = k[:-len('.so')] + '.dll'
+          if k.startswith('lib'):
+            k = k[len('lib'):]
         if not (p / k).exists():
           print(f'TF2 path sanity check failed: {p/k} is missing.')
           return False
@@ -34,6 +43,8 @@ def tf2_path_sanity_check(x, fast=False):
           return False
       return True
     return check(all_tf2_paths, Path(x))
+  if sys.platform == 'win32':
+    return (Path(x) / 'tf' / 'bin' / 'client.dll').exists()
   return (Path(x) / 'tf' / 'bin' / 'client.so').exists()
 
 default_path_and_broken = False
@@ -109,7 +120,7 @@ elif sys.platform == 'win32':
   except:
     print('Could not read the Steam install location from registry.')
     print('Using a dumb default.')
-    tf2_default_path = Path(__file__).drive / 'Program Files' / 'Steam' / 'steamapps' / 'common' / 'Team Fortress 2'
+    tf2_default_path = Path(file_base.anchor) / 'Program Files' / 'Steam' / 'steamapps' / 'common' / 'Team Fortress 2'
 elif sys.platform == 'darwin':
   tf2_default_path = '~/Library/Application Support/Steam/steamapps/common/Team Fortress 2'
 else:

@@ -3,10 +3,11 @@ from pathlib import Path
 
 import requests
 
+from file_base import file_base
 from worker_utils import create_threaded
 
 md_cache = {}
-md_cache_path = Path(__file__).parent / 'md_cache.pkl'
+md_cache_path = file_base / 'md_cache.pkl'
 if md_cache_path.exists():
   with md_cache_path.open('rb') as f:
     try:
