@@ -1,0 +1,29 @@
+tf/materials/temp
+tf/download/user_custom
+sound.cache
+
+only on linux:
+tf/videoconfig_linux.cfg
+tf/glshaders.cfg
+hl2_linux
+bin/libTelemetryX64.so
+bin/libTelemetryX86.so
+bin/video_webm.so
+bin/dxsupport_linux.csv
+bin/libprofiler.so.0
+bin/libtogl.so
+bin/libMiles.so
+"bin/linux32": {
+  "mssmixer.mix": null,
+  "binkawin.asi": null,
+  "mssmp3.asi": null
+},
+bin/cef_gtk.pak
+bin/dxsupport_linux.cfg
+bin/libtcmalloc_minimal.so.4
+bin/vpk_linux32
+hl2.sh
+
+rename
+*.so to *.dll
+bin/libSDL2-2.0.so.0 (should be SDL2.dll)

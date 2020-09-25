@@ -29,12 +29,13 @@ from PyQt5.QtWidgets import \
   QTextBrowser, \
   QProgressBar
 
+from file_base import file_base
 from md_cache import getMdFetcher
 
 debug = False
 
 releases = []
-release_cache = Path(__file__).parent / 'releases_cache.json'
+release_cache = file_base / 'releases_cache.json'
 if debug:
   if release_cache.exists():
     with release_cache.open('r') as f:
@@ -50,7 +51,7 @@ if debug:
     json.dump(releases, f)
 
 app = QApplication(sys.argv)
-app.setWindowIcon(QIcon(str(Path(__file__).parent.parent / 'icon.png')))
+app.setWindowIcon(QIcon(str(file_base.parent / 'icon.png')))
 if sys.platform == 'win32':
   import ctypes
   ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(u'maximsmol.tc2installer')
@@ -78,7 +79,7 @@ version_layout.addStretch(2)
 changelog = QTextBrowser()
 changelog.setOpenExternalLinks(True)
 # changelog.setPalette(changelog_palette)
-# with (Path(__file__).parent / 'gh_markdown.css').open('r') as f:
+# with (file_base / 'gh_markdown.css').open('r') as f:
 #   changelog.document().setDefaultStyleSheet(f.read())
 # changelog.setReadOnly(True)
 version_select_layout.addWidget(changelog)
@@ -150,7 +151,7 @@ main_layout.addWidget(install_path, 2, 1)
 if sys.platform == 'linux':
   install_path.setText('~/Team Comtress 2/')
 elif sys.platform == 'win32':
-  install_path.setText(Path(__file__).drive / 'Team Comtress 2')
+  install_path.setText(str(Path(file_base.absolute().anchor) / 'Team Comtress 2'))
 elif sys.platform == 'darwin':
   install_path.setText('~/Team Comtress 2')
 else:
@@ -178,14 +179,20 @@ select_install_btn.clicked.connect(select_install_cb)
 main_layout.addWidget(select_install_btn, 2, 2)
 
 safe_cfgs = []
-with (Path(__file__).parent / 'safe_cfgs.txt').open('r') as f:
+with (file_base / 'safe_cfgs.txt').open('r') as f:
   safe_cfgs = [x.strip() for x in f.readlines() if x.strip() != '']
 
 def rm(x):
-  if x.is_dir():
-    shutil.rmtree(x)
-    return
-  x.unlink(missing_ok=True)
+  def rm_():
+    if x.is_dir():
+      shutil.rmtree(x)
+      return
+    x.unlink(missing_ok=True)
+  try:
+    rm_()
+  except PermissionError:
+    x.chmod(0o777)
+    rm_()
 class TC2InstallWorker(QObject):
   status_signal = QtCore.pyqtSignal(float, str)
 
@@ -264,6 +271,7 @@ class TC2InstallWorker(QObject):
         # TODO: is there a way to skip entire directories?
         if not x.is_dir() and to_cur.exists() and to_cur.lstat().st_mtime == x.lstat().st_mtime:
           print(f'{"  " * indent}SKIP {x.name}')
+          files_copied += 1
           continue
 
         print(f'{"  " * indent}Syncing {x.name}')
@@ -291,7 +299,7 @@ class TC2InstallWorker(QObject):
           rm(f1)
         continue
 
-      shutil.rmtree(f)
+      rm(f)
     for f in (dst_p / 'tf' / 'cfg').iterdir():
       if f.name == 'unencrypted':
         for f1 in f.iterdir():

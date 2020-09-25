@@ -2,6 +2,13 @@ import json
 import os
 from pathlib import Path
 
+# ! ! ! ! ! !
+# ! ! ! ! ! !
+# WARNING: THIS GENERATES AN UNPORTABLE LIST OF FILES
+#          YOU HAVE TO CLEAN IT MANUALLY OR THINGS WILL BREAK
+# ! ! ! ! ! !
+# ! ! ! ! ! !
+
 res = {}
 
 root = Path(os.path.expanduser('~/.steam/steam/steamapps/common/Team Fortress 2/'))
